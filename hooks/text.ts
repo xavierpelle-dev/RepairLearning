@@ -5,6 +5,21 @@
  */
 import type { Lang } from '../types'
 
+/** What `/repairlearning top` and `share` show, already worked out. */
+export type Records = {
+  level: number
+  xp: number
+  /** XP still needed for the next level. */
+  toNext: number
+  streak: number
+  bestStreak: number
+  bestDay: number
+  /** Right answers out of all answers, as "82%", or "-" before any. */
+  accuracy: string
+  /** Topic labels with a badge, best first. */
+  badges: string[]
+}
+
 export type Text = {
   yesOrNo: string
   right: string
@@ -28,7 +43,13 @@ export type Text = {
   available: (shipped: number, generated: number | null) => string
   goalReached: (goal: number) => string
   summary: (seen: number, right: number, asked: number, count: number, goal: number) => string
+  levelUp: (level: number) => string
+  records: (r: Records) => string
+  share: (r: Records) => string
+  shareHint: string
 }
+
+const days = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`
 
 const EN: Text = {
   yesOrNo: ' · yes or no?',
@@ -39,7 +60,7 @@ const EN: Text = {
   next: 'Next',
   gotIt: 'Got it',
   hide: 'Hide',
-  commandDescription: 'RepairLearning: your learning stats, or pause, resume or reset the cards',
+  commandDescription: 'RepairLearning: your stats, records (top), a line to share, or pause, resume or reset',
   paused: 'Paused. `/repairlearning resume` brings the cards back.',
   resumed: 'On. Cards appear while Claude works.',
   resetDone: 'Progress deleted: every card is new again, and today starts at 0.',
@@ -58,6 +79,21 @@ const EN: Text = {
     const score = asked > 0 ? `, ${right}/${asked} right` : ''
     return `RepairLearning: ${cards} this turn${score} · ${count}/${goal} today`
   },
+  levelUp: level => `RepairLearning: level ${level} reached!`,
+  records: r => [
+    `Level ${r.level} · ${r.xp} XP (${r.toNext} to the next level).`,
+    `Streak: ${days(r.streak, 'day', 'days')} (best ${days(r.bestStreak, 'day', 'days')}). Best day: ${r.bestDay} cards.`,
+    `Right answers: ${r.accuracy}.`,
+    `Badges: ${r.badges.length === 0 ? 'none yet (20 answers at 80% in a topic)' : r.badges.join(', ')}.`,
+    '`/repairlearning share` gives a line to paste into Discord or Slack.',
+  ].join('\n'),
+  share: r => [
+    `RepairLearning · level ${r.level} (${r.xp} XP)`,
+    `streak ${days(r.streak, 'day', 'days')}`,
+    `${r.accuracy} right`,
+    ...(r.badges.length === 0 ? [] : [`badges: ${r.badges.join(', ')}`]),
+  ].join(' · '),
+  shareHint: 'Copy this line into Discord or Slack:',
 }
 
 const FR: Text = {
@@ -69,7 +105,7 @@ const FR: Text = {
   next: 'Suivante',
   gotIt: 'Compris',
   hide: 'Masquer',
-  commandDescription: 'RepairLearning : tes stats, ou mettre en pause, reprendre ou remettre à zéro',
+  commandDescription: 'RepairLearning : tes stats, tes records (top), une ligne à partager, ou pause, reprise, remise à zéro',
   paused: 'En pause. `/repairlearning resume` ramène les cartes.',
   resumed: 'Activé. Les cartes apparaissent pendant que Claude travaille.',
   resetDone: 'Progression effacée : toutes les cartes redeviennent nouvelles, et aujourd’hui repart de 0.',
@@ -88,6 +124,21 @@ const FR: Text = {
     const score = asked > 0 ? `, ${right}/${asked} justes` : ''
     return `RepairLearning : ${cards} ce tour${score} · ${count}/${goal} aujourd’hui`
   },
+  levelUp: level => `RepairLearning : niveau ${level} atteint !`,
+  records: r => [
+    `Niveau ${r.level} · ${r.xp} XP (encore ${r.toNext} pour le niveau suivant).`,
+    `Série : ${days(r.streak, 'jour', 'jours')} (record ${days(r.bestStreak, 'jour', 'jours')}). Meilleur jour : ${r.bestDay} cartes.`,
+    `Bonnes réponses : ${r.accuracy}.`,
+    `Badges : ${r.badges.length === 0 ? 'aucun pour l’instant (20 réponses à 80 % dans un sujet)' : r.badges.join(', ')}.`,
+    '`/repairlearning share` donne une ligne à coller dans Discord ou Slack.',
+  ].join('\n'),
+  share: r => [
+    `RepairLearning · niveau ${r.level} (${r.xp} XP)`,
+    `série de ${days(r.streak, 'jour', 'jours')}`,
+    `${r.accuracy} de bonnes réponses`,
+    ...(r.badges.length === 0 ? [] : [`badges : ${r.badges.join(', ')}`]),
+  ].join(' · '),
+  shareHint: 'Copie cette ligne dans Discord ou Slack :',
 }
 
 export const TEXT: Readonly<Record<Lang, Text>> = { en: EN, fr: FR }

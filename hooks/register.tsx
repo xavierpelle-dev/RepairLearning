@@ -18,7 +18,9 @@ import {
 } from './planner'
 import type { Ask, Progress, Weights } from './planner'
 import { avoidFor, merge, needsRefill, readLibrary, topicToFill } from './pool'
+import { addCard, badges, levelOf, liveStreak, readScore, xpForLevel } from './score'
 import { TEXT } from './text'
+import type { Records } from './text'
 
 const cardAtom = atom({ plugin: 'repairlearning', key: 'card' } as const, null)
 const feedbackAtom = atom({ plugin: 'repairlearning', key: 'feedback' } as const, null)
@@ -200,6 +202,13 @@ async function record($: EngineInterface, card: Card, isRight: boolean | null): 
   const counted: DayCount = { date: day.date, count: day.count + 1 }
   await $.store.set('day', counted)
 
+  // Read again right before writing, like progress: another session may have
+  // scored since. A level shows a toast once, in the session that crosses it.
+  const before = readScore(await $.store.get('score'))
+  const after = addCard(before, isRight, date, counted.count)
+  await $.store.set('score', after)
+  if (levelOf(after.xp) > levelOf(before.xp)) $.ui.toast(text().levelUp(levelOf(after.xp)))
+
   session.unanswered = null
   await update($, tallyAtom, t => ({
     seen: t.seen + 1,
@@ -270,7 +279,6 @@ async function statsText($: EngineInterface): Promise<string> {
   const rows = Object.entries(byTopic).sort((a, b) => b[1].asked - a[1].asked)
   const asked = rows.reduce((n, [, row]) => n + row.asked, 0)
   const right = rows.reduce((n, [, row]) => n + row.right, 0)
-  const pct = (r: number, a: number): string => (a === 0 ? '-' : `${Math.round((100 * r) / a)}%`)
   // Only the topics actually answered, most answered first: the set is open
   // now, so listing every topic that exists would be a wall of dashes.
   const t = text()
@@ -286,6 +294,28 @@ async function statsText($: EngineInterface): Promise<string> {
   ].join('\n')
 }
 
+const pct = (r: number, a: number): string => (a === 0 ? '-' : `${Math.round((100 * r) / a)}%`)
+
+/** Everything `/repairlearning top` and `share` show. */
+async function recordsOf($: EngineInterface): Promise<Records> {
+  const score = readScore(await $.store.get('score'))
+  const byTopic = accuracyByTopic(allCards(), session.progress)
+  const rows = Object.values(byTopic)
+  const asked = rows.reduce((n, row) => n + row.asked, 0)
+  const right = rows.reduce((n, row) => n + row.right, 0)
+  const level = levelOf(score.xp)
+  return {
+    level,
+    xp: score.xp,
+    toNext: xpForLevel(level + 1) - score.xp,
+    streak: liveStreak(score, await today($)),
+    bestStreak: score.bestStreak,
+    bestDay: score.bestDay,
+    accuracy: pct(right, asked),
+    badges: badges(byTopic).map(labelOf),
+  }
+}
+
 async function setPaused($: EngineInterface, isPaused: boolean): Promise<void> {
   session.isPaused = isPaused
   await $.store.set('paused', isPaused)
@@ -299,6 +329,7 @@ async function reset($: EngineInterface): Promise<void> {
   await $.store.delete('progress')
   await $.store.delete('day')
   await $.store.delete('library')
+  await $.store.delete('score')
   session.progress = {}
   session.shown.clear()
   // Generated cards are saved data too, so "start fresh" drops them as well.
@@ -363,7 +394,7 @@ async function load($: EngineInterface): Promise<void> {
   await $.command.register({
     name: 'repairlearning',
     description: text().commandDescription,
-    argumentHint: '[stats | pause | resume | reset]',
+    argumentHint: '[stats | top | share | pause | resume | reset]',
     immediate: true,
   })
   session.progress = ((await $.store.get('progress')) as Progress | undefined) ?? {}
@@ -411,6 +442,8 @@ export const register: Register = (on, options) => {
       await setPaused($, false)
       return { text: text().resumed }
     }
+    if (arg === 'top') return { text: text().records(await recordsOf($)) }
+    if (arg === 'share') return { text: `${text().shareHint}\n\n${text().share(await recordsOf($))}` }
     if (arg === 'reset') {
       await reset($)
       return { text: text().resetDone }

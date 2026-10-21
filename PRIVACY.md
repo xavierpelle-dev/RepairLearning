@@ -65,6 +65,7 @@ In RepairLearning's own file in Claude Code's local plugin store, under
 | Today | The date and how many cards you saw that day |
 | Paused | Whether you turned cards off with `/repairlearning pause` |
 | Library | The cards a model wrote: their topic, text, answer and explanation |
+| Score | Your XP, current and best streak, the last day you saw a card, and your best day |
 
 The library holds cards about public programming topics. It never holds
 anything taken from your own code or conversation.
@@ -73,10 +74,12 @@ anything taken from your own code or conversation.
 
 The topic name and the cards you already hold for it, to Claude, and only
 while card writing is on. The author receives no data of any kind.
+`/repairlearning share` only prints a line in your terminal; it sends nothing,
+and the line reaches Discord or Slack only if you paste it there yourself.
 
 ## Removing your data
 
-Run `/repairlearning reset` to delete your progress, today's count and every card a
+Run `/repairlearning reset` to delete your progress, score, today's count and every card a
 model wrote. To remove RepairLearning completely, uninstall it with
 `claude plugin uninstall repairlearning@repairlearning` and delete its file under
 `~/.claude/plugins/store/`.

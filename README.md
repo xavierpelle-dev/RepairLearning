@@ -84,9 +84,28 @@ of starting a prompt. You can also click the buttons, or focus the band with
 | Command | What it does |
 | --- | --- |
 | `/repairlearning` | Today's count, your accuracy, and accuracy by topic |
+| `/repairlearning top` | Your level, XP, streak, best day and badges |
+| `/repairlearning share` | One line to paste into Discord or Slack |
 | `/repairlearning pause` | Turn cards off (stays off across sessions) |
 | `/repairlearning resume` | Turn them back on |
 | `/repairlearning reset` | Delete your saved progress and start fresh |
+
+### Levels, streaks and badges
+
+Every card earns XP: 3 for a right answer, 1 for a fact read or a wrong
+answer. Levels get further apart as you climb (level 2 at 10 XP, 5 at 160,
+10 at 810), and a toast tells you when you reach one. Seeing at least one card
+a day keeps your streak going; a whole day without one ends it. A topic earns a
+badge once you have answered 20 of its questions with 80% right or better.
+
+`/repairlearning share` prints a line such as
+
+```
+RepairLearning · level 7 (412 XP) · streak 12 days · 82% right · badges: PHP, Git
+```
+
+to paste into a Discord or Slack channel and compare with friends. Nothing is
+sent anywhere: the score stays in the local plugin store with your progress.
 
 ### Settings
 

@@ -297,3 +297,30 @@ test('French asks the model for French cards, and keeps English ones out', { opt
   const stats = await $.command.run(command(''))
   expect(stats.text).toMatch(/1 générées/)
 })
+
+test('answering earns XP and a streak, shown by top and share', async ($, on) => {
+  engine(on)
+  await $.turn.start({ text: 'one', turnId: 't1' })
+  const ui = await $.ui.mount({ plugin: 'repairlearning', surface: 'terminal', ...BAND })
+  await ui.press({ key: (await ui.find({ key: 'yes' })) ? 'yes' : 'next' })
+  await ui.unmount()
+
+  const top = await $.command.run(command('top'))
+  expect(top.text).toMatch(/^Level 1 · [13] XP/)
+  expect(top.text).toMatch(/Streak: 1 day/)
+  const share = await $.command.run(command('share'))
+  expect(share.text).toMatch(/RepairLearning · level 1 \([13] XP\) · streak 1 day · /)
+})
+
+test('reset clears the score too', async ($, on) => {
+  engine(on, { score: { xp: 500, streak: 9, bestStreak: 9, lastDay: '2026-10-02', bestDay: 40 } })
+  expect((await $.command.run(command('top'))).text).toMatch(/^Level 8 · 500 XP/)
+  await $.command.run(command('reset'))
+  expect((await $.command.run(command('top'))).text).toMatch(/^Level 1 · 0 XP/)
+})
+
+test('records and share speak French when French is on', { options: { french: true } }, async ($, on) => {
+  engine(on, { score: { xp: 90, streak: 3, bestStreak: 5, lastDay: '2026-10-02', bestDay: 12 } })
+  expect((await $.command.run(command('top'))).text).toMatch(/^Niveau 4 · 90 XP \(encore 70 pour le niveau suivant\)/)
+  expect((await $.command.run(command('share'))).text).toMatch(/niveau 4 \(90 XP\) · série de 3 jours/)
+})

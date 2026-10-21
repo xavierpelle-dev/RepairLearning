@@ -2,7 +2,7 @@
   "name": "repairlearning",
   "displayName": "RepairLearning",
   "description": "Learn while Claude works: short facts and yes/no questions about PHP, JavaScript and Git, in English or French, in the band above the prompt, paused whenever Claude needs you.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "Xavier Pelle"
   },
