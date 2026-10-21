@@ -1,13 +1,13 @@
 {
-  "name": "holdtime",
-  "description": "Holdtime: learn while Claude Code works.",
+  "name": "repairlearning",
+  "description": "RepairLearning: learn while Claude Code works.",
   "owner": {
-    "name": "Rohith A"
+    "name": "Xavier Pelle"
   },
   "plugins": [
     {
-      "name": "holdtime",
-      "description": "Short facts and yes/no questions above the prompt while Claude works, picked from the session and paused whenever Claude needs you.",
+      "name": "repairlearning",
+      "description": "Short facts and yes/no questions about PHP, JavaScript and Git, in English or French, above the prompt while Claude works.",
       "category": "learning",
       "source": "./"
     }

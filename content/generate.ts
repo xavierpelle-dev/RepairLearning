@@ -5,7 +5,7 @@
  * Claude Code access here either: `register.tsx` makes the call and passes
  * the reply in, so this is tested without a model.
  */
-import type { Card, Topic } from '../types'
+import type { Card, Lang, Topic } from '../types'
 import { hashOf, isValidCard, labelOf, MAX_EXPLAIN, MAX_TEXT, MIN_EXPLAIN } from '../hooks/planner'
 
 /** Cards asked for in one request. Batched, so one round trip fills a while. */
@@ -44,8 +44,11 @@ export const SYSTEM = [
 ].join('\n')
 
 /** The request for one topic, naming cards already held so they are not repeated. */
-export function buildPrompt(topic: Topic, avoid: readonly string[]): string {
+export function buildPrompt(topic: Topic, avoid: readonly string[], lang: Lang = 'en'): string {
   const lines = [`Topic: ${labelOf(topic)}.`, `Write ${BATCH} cards.`]
+  if (lang === 'fr') {
+    lines.push('Write "text" and "explain" in French. Keep code, commands and identifiers as they are.')
+  }
   if (avoid.length > 0) {
     lines.push('', 'Do not repeat any of these, which the reader already has:')
     for (const text of avoid.slice(0, 40)) lines.push(`- ${text}`)
@@ -93,7 +96,7 @@ function parseArray(reply: string): unknown[] {
  * and filtered down to the ones fit to show. A reply that is not JSON, or
  * whose cards are all malformed, yields an empty list and nothing is kept.
  */
-export function parseCards(topic: Topic, reply: string): Card[] {
+export function parseCards(topic: Topic, reply: string, lang: Lang = 'en'): Card[] {
   const out: Card[] = []
   const seen = new Set<string>()
   for (const raw of parseArray(reply)) {
@@ -110,6 +113,7 @@ export function parseCards(topic: Topic, reply: string): Card[] {
       kind: isAsking ? 'yesno' : 'fact',
       text,
       source: 'ai',
+      lang,
       ...(isAsking ? { answer: fields['answer'] === true } : {}),
       ...(isAsking && typeof fields['explain'] === 'string' ? { explain: fields['explain'].trim() } : {}),
     }

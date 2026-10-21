@@ -1,35 +1,42 @@
 {
-  "name": "holdtime",
-  "displayName": "Holdtime",
-  "description": "Learn while Claude works: short facts and yes/no questions in the band above the prompt, picked from what Claude is doing, paused whenever Claude needs you.",
-  "version": "0.2.2",
+  "name": "repairlearning",
+  "displayName": "RepairLearning",
+  "description": "Learn while Claude works: short facts and yes/no questions about PHP, JavaScript and Git, in English or French, in the band above the prompt, paused whenever Claude needs you.",
+  "version": "1.0.0",
   "author": {
-    "name": "Rohith A"
+    "name": "Xavier Pelle"
   },
-  "homepage": "https://github.com/ItsRohith-A/holdtime#readme",
-  "repository": "https://github.com/ItsRohith-A/holdtime",
-  "supportUrl": "https://github.com/ItsRohith-A/holdtime/issues",
-  "privacyPolicyUrl": "https://github.com/ItsRohith-A/holdtime/blob/main/PRIVACY.md",
+  "homepage": "https://github.com/xavierpelle-dev/RepairLearning#readme",
+  "repository": "https://github.com/xavierpelle-dev/RepairLearning",
+  "supportUrl": "https://github.com/xavierpelle-dev/RepairLearning/issues",
+  "privacyPolicyUrl": "https://github.com/xavierpelle-dev/RepairLearning/blob/main/PRIVACY.md",
   "license": "MIT",
   "keywords": [
     "learning",
     "quiz",
     "flashcards",
     "spaced-repetition",
-    "focus"
+    "focus",
+    "french"
   ],
   "types": "./types/index.d.ts",
   "userConfig": {
+    "french": {
+      "type": "boolean",
+      "title": "Cartes en français (French cards)",
+      "description": "Show the cards, the band and the summaries in French. Off: English.",
+      "default": false
+    },
     "ai_cards": {
       "type": "boolean",
       "title": "Write new cards with a model",
-      "description": "Generate cards for whatever this session is about, such as Rust or Kubernetes, instead of only the shipped JavaScript, Python and Git packs. Sends the topic name to Claude in the background and uses your plan.",
+      "description": "Generate cards for whatever this session is about, such as Rust or Kubernetes, instead of only the shipped JavaScript, PHP and Git packs. Sends the topic name to Claude in the background and uses your plan.",
       "default": true
     },
     "daily_goal": {
       "type": "number",
       "title": "Daily goal",
-      "description": "Cards per day before Holdtime goes quiet.",
+      "description": "Cards per day before RepairLearning goes quiet.",
       "default": 20,
       "min": 1,
       "max": 500

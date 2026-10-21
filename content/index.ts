@@ -1,7 +1,7 @@
 import type { Card } from '../types'
 import { GIT } from './git'
 import { JAVASCRIPT } from './javascript'
-import { PYTHON } from './python'
+import { PHP } from './php'
 
-/** Every card Holdtime ships. */
-export const CARDS: readonly Card[] = [...JAVASCRIPT, ...PYTHON, ...GIT]
+/** Every card RepairLearning ships. */
+export const CARDS: readonly Card[] = [...JAVASCRIPT, ...PHP, ...GIT]

@@ -1,10 +1,10 @@
 /**
- * Holdtime's decisions, with no access to Claude Code: which topic a tool call
+ * RepairLearning's decisions, with no access to Claude Code: which topic a tool call
  * points at, which card comes next, how an answer moves a card between
  * spaced-repetition boxes, and whether a card is fit to show. Everything here
  * is a plain function of its inputs, so it is tested directly.
  */
-import type { Card, Topic } from '../types'
+import type { Card, Lang, Topic } from '../types'
 
 /** A card's place in the Leitner system, kept per card id in the store. */
 export type CardProgress = {
@@ -35,7 +35,7 @@ export const BASE_WEIGHT = 0.5
 export const DECAY = 0.8
 
 /** The topics the shipped packs cover. */
-export const PACK_TOPICS: readonly Topic[] = ['javascript', 'python', 'git']
+export const PACK_TOPICS: readonly Topic[] = ['javascript', 'php', 'git']
 
 export function freshWeights(): Weights {
   return {}
@@ -222,7 +222,7 @@ const LABELS: Readonly<Record<string, string>> = {
   css: 'CSS',
 }
 
-/** The name a topic is shown under in the band and in `/holdtime`. */
+/** The name a topic is shown under in the band and in `/repairlearning`. */
 export function labelOf(topic: Topic): string {
   return LABELS[topic] ?? topic.charAt(0).toUpperCase() + topic.slice(1)
 }
@@ -279,12 +279,15 @@ export function grade(progress: Progress, card: Card, isRight: boolean | null, t
   }
 }
 
-/** The longest a card's question or fact may be, so the band stays one line. */
-export const MAX_TEXT = 130
+/**
+ * The longest a card's question or fact may be, so the band stays short.
+ * Sized for French, which runs about a fifth longer than English.
+ */
+export const MAX_TEXT = 150
 
 /** The bounds an explanation has to fall inside. */
 export const MIN_EXPLAIN = 11
-export const MAX_EXPLAIN = 199
+export const MAX_EXPLAIN = 230
 
 /**
  * Whether a card is fit to show. The shipped packs are checked against this in
@@ -305,6 +308,20 @@ export function isValidCard(value: unknown): value is Card {
   if (!card.text.endsWith('?')) return false
   const explain = card.explain
   return typeof explain === 'string' && explain.length >= MIN_EXPLAIN && explain.length <= MAX_EXPLAIN
+}
+
+/**
+ * A card as it is shown in `lang`: a shipped card swaps in its French text,
+ * and keeps its id, so progress carries over when the language changes.
+ */
+export function inLang(card: Card, lang: Lang): Card {
+  if (lang !== 'fr' || !card.fr) return card
+  return { ...card, text: card.fr.text, ...(card.fr.explain === undefined ? {} : { explain: card.fr.explain }) }
+}
+
+/** Whether a generated card belongs to `lang`; one stored before languages is English. */
+export function isInLang(card: Card, lang: Lang): boolean {
+  return (card.lang ?? 'en') === lang
 }
 
 /** A short stable hash of some text, used to give a generated card its id. */

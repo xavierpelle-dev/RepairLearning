@@ -3,8 +3,8 @@ import { describe, expect, test } from 'claude-code/testing'
 import { CARDS } from '../content'
 import type { Card } from '../types'
 import {
-  addDays, bump, decay, freshWeights, grade, hashOf, isAnswered, isValidCard, keyOf, labelOf,
-  leadingTopic, pickCard, seed, topicOf, weightOf, BASE_WEIGHT, PACK_TOPICS,
+  addDays, bump, decay, freshWeights, grade, hashOf, inLang, isAnswered, isInLang, isValidCard, keyOf, labelOf,
+  leadingTopic, pickCard, seed, topicOf, weightOf, BASE_WEIGHT, MAX_TEXT, PACK_TOPICS,
 } from './planner'
 
 const DAY = '2026-10-02'
@@ -165,7 +165,7 @@ describe('isValidCard', () => {
     expect(isValidCard({ ...good, text: 'No question mark' })).toBe(false)
     expect(isValidCard({ ...good, answer: 'yes' })).toBe(false)
     expect(isValidCard({ ...good, explain: 'short' })).toBe(false)
-    expect(isValidCard({ ...good, text: `${'a'.repeat(140)}?` })).toBe(false)
+    expect(isValidCard({ ...good, text: `${'a'.repeat(MAX_TEXT)}?` })).toBe(false)
     expect(isValidCard({ ...good, kind: 'essay' })).toBe(false)
     expect(isValidCard({ id: 'z', topic: 'rust', kind: 'fact', text: 'A fact.', answer: true })).toBe(false)
   })
@@ -187,6 +187,28 @@ describe('content', () => {
     for (const card of CARDS) {
       expect(isValidCard(card)).toBe(true)
     }
+  })
+
+  test('every shipped card has a French version that passes the same check', () => {
+    for (const card of CARDS) {
+      expect(card.fr === undefined).toBe(false)
+      expect(card.kind === 'yesno' ? card.fr?.explain !== undefined : card.fr?.explain === undefined).toBe(true)
+      expect(isValidCard(inLang(card, 'fr'))).toBe(true)
+    }
+  })
+
+  test('French text replaces the English but keeps the id, and English is left alone', () => {
+    const card = CARDS.find(c => c.kind === 'yesno')
+    if (!card) throw new Error('no question shipped')
+    expect(inLang(card, 'fr').id).toBe(card.id)
+    expect(inLang(card, 'fr').text).toBe(card.fr?.text)
+    expect(inLang(card, 'en')).toBe(card)
+  })
+
+  test('a generated card stored without a language counts as English', () => {
+    const card: Card = { id: 'g', topic: 'rust', kind: 'fact', text: 'A fact.' }
+    expect(isInLang(card, 'en')).toBe(true)
+    expect(isInLang({ ...card, lang: 'fr' }, 'en')).toBe(false)
   })
 
   test('each topic has facts and questions, and answers are not all one way', () => {

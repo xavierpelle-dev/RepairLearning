@@ -5,6 +5,9 @@
  */
 export type Topic = string
 
+/** The language cards and the band are shown in. */
+export type Lang = 'en' | 'fr'
+
 /**
  * One learning card. A `fact` is read and dismissed; a `yesno` is answered
  * with 1 (yes) or 2 (no) and then explained.
@@ -20,6 +23,10 @@ export type Card = {
   explain?: string
   /** `pack` for a card this plugin ships, `ai` for one a model wrote. */
   source?: 'pack' | 'ai'
+  /** A shipped card's French text and explanation, shown when French is on. */
+  fr?: { text: string; explain?: string }
+  /** The language a generated card was written in; English when missing. */
+  lang?: Lang
 }
 
 /** What the band shows after a `yesno` card is answered. */
@@ -30,7 +37,7 @@ export type TurnTally = { seen: number; asked: number; right: number }
 
 declare module 'claude-code' {
   interface PluginState {
-    holdtime: {
+    repairlearning: {
       card: Card | null
       feedback: Feedback | null
       needsYou: boolean

@@ -1,24 +1,24 @@
-# Holdtime privacy policy
+# RepairLearning privacy policy
 
 _Last updated: 2 October 2026_
 
-Holdtime runs inside Claude Code on your own computer. This page explains what
+RepairLearning runs inside Claude Code on your own computer. This page explains what
 it reads, what it keeps, and what it sends.
 
 ## The short version
 
-- **One thing leaves your computer: a topic name.** When Holdtime writes new
+- **One thing leaves your computer: a topic name.** When RepairLearning writes new
   cards, it asks Claude for cards about a topic such as `Rust` or `Kubernetes`.
-  Nothing else about your work is sent. Turn this off and Holdtime makes no
+  Nothing else about your work is sent. Turn this off and RepairLearning makes no
   network requests at all.
-- **Never your code, prompts or replies.** Holdtime does not read file
+- **Never your code, prompts or replies.** RepairLearning does not read file
   contents, your prompts, or Claude's answers, and cannot send them.
 - **No accounts, tracking, analytics or ads.** The author receives no data of
   any kind.
 
 ## Writing cards with a model
 
-Holdtime ships 108 cards covering JavaScript, Python and Git. For any other
+RepairLearning ships 371 cards covering JavaScript, PHP and Git. For any other
 topic it asks Claude to write more. This is **on by default** and you can turn
 it off in `/config`, under **Write new cards with a model**.
 
@@ -31,12 +31,12 @@ While it is on:
 - **Where it goes**: to Claude, through Claude Code, using your own plan or API
   key. The request is not part of your conversation and Claude cannot see it.
 - **What it costs**: the requests count against your Claude plan like any other
-  use. One request writes eight cards, and Holdtime only asks when it is
+  use. One request writes eight cards, and RepairLearning only asks when it is
   running short for the current topic.
 - **When it happens**: in the background, on a timer, never while you are
   waiting for a card.
 
-Turn it off and Holdtime uses the shipped packs only and makes no network
+Turn it off and RepairLearning uses the shipped packs only and makes no network
 requests.
 
 ## What it reads
@@ -56,14 +56,14 @@ requests.
 
 ## What it stores
 
-In Holdtime's own file in Claude Code's local plugin store, under
+In RepairLearning's own file in Claude Code's local plugin store, under
 `~/.claude/plugins/store/` on your computer:
 
 | Item | Contents |
 | --- | --- |
 | Progress | For each card id: its review box, when it is next due, how many times you saw it and got it right |
 | Today | The date and how many cards you saw that day |
-| Paused | Whether you turned cards off with `/holdtime pause` |
+| Paused | Whether you turned cards off with `/repairlearning pause` |
 | Library | The cards a model wrote: their topic, text, answer and explanation |
 
 The library holds cards about public programming topics. It never holds
@@ -76,14 +76,14 @@ while card writing is on. The author receives no data of any kind.
 
 ## Removing your data
 
-Run `/holdtime reset` to delete your progress, today's count and every card a
-model wrote. To remove Holdtime completely, uninstall it with
-`claude plugin uninstall holdtime@holdtime` and delete its file under
+Run `/repairlearning reset` to delete your progress, today's count and every card a
+model wrote. To remove RepairLearning completely, uninstall it with
+`claude plugin uninstall repairlearning@repairlearning` and delete its file under
 `~/.claude/plugins/store/`.
 
 ## Children
 
-Holdtime is a tool for Claude Code users and is not directed at children under 18.
+RepairLearning is a tool for Claude Code users and is not directed at children under 18.
 
 ## Changes
 
@@ -92,4 +92,4 @@ repository, with the date above updated.
 
 ## Contact
 
-Open an issue at <https://github.com/ItsRohith-A/holdtime/issues>.
+Open an issue at <https://github.com/xavierpelle-dev/RepairLearning/issues>.

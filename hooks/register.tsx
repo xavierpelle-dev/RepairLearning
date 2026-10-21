@@ -1,5 +1,5 @@
 /**
- * Holdtime: short learning cards in the band above the prompt while Claude
+ * RepairLearning: short learning cards in the band above the prompt while Claude
  * works. A card appears when a turn starts, steps aside whenever Claude needs
  * the person, and the turn ends with a one-line summary under Claude's answer.
  *
@@ -9,20 +9,21 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Card, Feedback, Topic, TurnTally } from '../types'
+import type { Card, Feedback, Lang, Topic, TurnTally } from '../types'
 import { CARDS } from '../content'
 import { BATCH_TOKENS, buildPrompt, MODEL, parseCards, SYSTEM, TIMEOUT_MS } from '../content/generate'
 import {
-  accuracyByTopic, bump, dayOf, decay, freshWeights, grade, isAnswered, keyOf, labelOf, pickCard,
-  PROJECT_FILES, seed, topicOf,
+  accuracyByTopic, bump, dayOf, decay, freshWeights, grade, inLang, isAnswered, isInLang, keyOf, labelOf,
+  pickCard, PROJECT_FILES, seed, topicOf,
 } from './planner'
 import type { Ask, Progress, Weights } from './planner'
 import { avoidFor, merge, needsRefill, readLibrary, topicToFill } from './pool'
+import { TEXT } from './text'
 
-const cardAtom = atom({ plugin: 'holdtime', key: 'card' } as const, null)
-const feedbackAtom = atom({ plugin: 'holdtime', key: 'feedback' } as const, null)
-const needsYouAtom = atom({ plugin: 'holdtime', key: 'needsYou' } as const, false)
-const tallyAtom = atom({ plugin: 'holdtime', key: 'tally' } as const, { seen: 0, asked: 0, right: 0 })
+const cardAtom = atom({ plugin: 'repairlearning', key: 'card' } as const, null)
+const feedbackAtom = atom({ plugin: 'repairlearning', key: 'feedback' } as const, null)
+const needsYouAtom = atom({ plugin: 'repairlearning', key: 'needsYou' } as const, false)
+const tallyAtom = atom({ plugin: 'repairlearning', key: 'tally' } as const, { seen: 0, asked: 0, right: 0 })
 
 /** How long after a topic goes quiet before its cards are generated. */
 const REFILL_DELAY_MS = 1500
@@ -45,6 +46,9 @@ type DayCount = { date: string; count: number }
  * read again right before each write; what the band draws lives in $.state.
  */
 const session = {
+  lang: 'en' as Lang,
+  /** The shipped packs in `lang`, translated once per load. */
+  packs: CARDS as readonly Card[],
   dailyGoal: 20,
   maxPerTurn: 5,
   weights: freshWeights() as Weights,
@@ -62,7 +66,7 @@ const session = {
    * awaits, so a second press of the same key cannot count twice.
    */
   isBusy: false,
-  /** Whether cards may be generated. Off makes Holdtime pack-only and offline. */
+  /** Whether cards may be generated. Off makes RepairLearning pack-only and offline. */
   isAiOn: true,
   /** Generated cards, shared with every session through $.store. */
   library: [] as Card[],
@@ -74,9 +78,20 @@ const session = {
   triedAt: {} as Record<Topic, number>,
 }
 
+/** The interface sentences in the session's language. */
+function text() {
+  return TEXT[session.lang]
+}
+
+/** The generated cards written in the session's language. */
+function libraryInLang(): Card[] {
+  return session.library.filter(card => isInLang(card, session.lang))
+}
+
 /** Everything that can be shown: the shipped packs and what a model wrote. */
 function allCards(): readonly Card[] {
-  return session.library.length === 0 ? CARDS : [...CARDS, ...session.library]
+  const library = libraryInLang()
+  return library.length === 0 ? session.packs : [...session.packs, ...library]
 }
 
 /** Takes the press lock; false when another press is still being handled. */
@@ -118,13 +133,13 @@ async function generate($: EngineInterface, topic: Topic): Promise<void> {
     const reply = await $.model.complete({
       model: MODEL,
       system: SYSTEM,
-      prompt: buildPrompt(topic, avoidFor(session.library, CARDS, topic)),
+      prompt: buildPrompt(topic, avoidFor(libraryInLang(), session.packs, topic), session.lang),
       maxTokens: BATCH_TOKENS,
       timeoutMs: TIMEOUT_MS,
     })
     // A Claude API failure resolves rather than rejects, so this is the check.
     if (!reply.isAnswered) return
-    const made = parseCards(topic, reply.text)
+    const made = parseCards(topic, reply.text, session.lang)
     if (made.length === 0) return
     // Another session may have generated since this one last read.
     const stored = readLibrary(await $.store.get('library'))
@@ -145,7 +160,7 @@ async function generate($: EngineInterface, topic: Topic): Promise<void> {
 async function queueRefill($: EngineInterface): Promise<void> {
   if (!session.isAiOn || session.isGenerating) return
   const topic = topicToFill(session.weights)
-  if (!needsRefill(session.library, topic, session.shown)) return
+  if (!needsRefill(libraryInLang(), topic, session.shown)) return
   const tried = session.triedAt[topic]
   if (tried !== undefined && (await $.clock.now()) - tried < RETRY_MS) return
   session.refill?.cancel()
@@ -194,7 +209,7 @@ async function record($: EngineInterface, card: Card, isRight: boolean | null): 
   // Toast on the card that carries the count over the goal, not on an exact
   // match: another session's write can take it past the goal in one step.
   if (day.count < session.dailyGoal && counted.count >= session.dailyGoal) {
-    $.ui.toast(`Holdtime: daily goal of ${session.dailyGoal} cards reached. Nice work.`)
+    $.ui.toast(text().goalReached(session.dailyGoal))
   }
 }
 
@@ -258,15 +273,16 @@ async function statsText($: EngineInterface): Promise<string> {
   const pct = (r: number, a: number): string => (a === 0 ? '-' : `${Math.round((100 * r) / a)}%`)
   // Only the topics actually answered, most answered first: the set is open
   // now, so listing every topic that exists would be a wall of dashes.
+  const t = text()
   const topics = rows.length === 0
-    ? 'nothing answered yet'
+    ? t.nothingYet
     : rows.slice(0, 6).map(([t, row]) => `${labelOf(t)} ${pct(row.right, row.asked)} (${row.asked})`).join(' · ')
   return [
-    `${session.isPaused ? 'Paused. ' : ''}${day.count}/${session.dailyGoal} cards today.`,
-    `Questions answered: ${asked}, right: ${right} (${pct(right, asked)}).`,
-    `By topic: ${topics}.`,
-    `Cards available: ${CARDS.length} shipped${session.isAiOn ? `, ${session.library.length} generated` : ' (generation off)'}.`,
-    session.isPaused ? '`/holdtime resume` turns the cards back on.' : '`/holdtime pause` turns the cards off.',
+    `${session.isPaused ? t.pausedPrefix : ''}${t.today(day.count, session.dailyGoal)}`,
+    t.answered(asked, right, pct(right, asked)),
+    t.byTopic(topics),
+    t.available(session.packs.length, session.isAiOn ? libraryInLang().length : null),
+    session.isPaused ? t.resumeHint : t.pauseHint,
   ].join('\n')
 }
 
@@ -339,16 +355,14 @@ async function endTurn($: EngineInterface): Promise<string | null> {
   await update($, feedbackAtom, () => null)
   await setNeedsYou($, false)
   if (tally.seen === 0) return null
-  const cards = `${tally.seen} card${tally.seen === 1 ? '' : 's'}`
-  const right = tally.asked > 0 ? `, ${tally.right}/${tally.asked} right` : ''
   const day = await readDay($)
-  return `Holdtime: ${cards} this turn${right} · ${day.count}/${session.dailyGoal} today`
+  return text().summary(tally.seen, tally.right, tally.asked, day.count, session.dailyGoal)
 }
 
 async function load($: EngineInterface): Promise<void> {
   await $.command.register({
-    name: 'holdtime',
-    description: 'Holdtime: your learning stats, or pause, resume or reset the cards',
+    name: 'repairlearning',
+    description: text().commandDescription,
     argumentHint: '[stats | pause | resume | reset]',
     immediate: true,
   })
@@ -367,6 +381,8 @@ async function load($: EngineInterface): Promise<void> {
 }
 
 export const register: Register = (on, options) => {
+  session.lang = options['french'] === true ? 'fr' : 'en'
+  session.packs = CARDS.map(card => inLang(card, session.lang))
   session.dailyGoal = Number(options['daily_goal'] ?? 20)
   session.maxPerTurn = Number(options['max_per_turn'] ?? 5)
   session.isAiOn = options['ai_cards'] !== false
@@ -385,19 +401,19 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  on('command.run', { command: 'holdtime' }, async ($, e) => {
+  on('command.run', { command: 'repairlearning' }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
     if (arg === 'pause') {
       await setPaused($, true)
-      return { text: 'Paused. `/holdtime resume` brings the cards back.' }
+      return { text: text().paused }
     }
     if (arg === 'resume') {
       await setPaused($, false)
-      return { text: 'On. Cards appear while Claude works.' }
+      return { text: text().resumed }
     }
     if (arg === 'reset') {
       await reset($)
-      return { text: 'Progress deleted: every card is new again, and today starts at 0.' }
+      return { text: text().resetDone }
     }
     return { text: await statsText($) }
   })
@@ -449,9 +465,10 @@ export const register: Register = (on, options) => {
     if (needsYou || !card) return next(e)
 
     const { Box, Button, Markdown, Text } = $.ui.resolve(e)
+    const t = text()
     const isAsking = card.kind === 'yesno' && !feedback
-    const title = `Holdtime · ${labelOf(card.topic)}${isAsking ? ' · yes or no?' : ''}`
-    const body = feedback ? `${feedback.isRight ? '**Right.**' : '**Not quite.**'} ${feedback.text}` : card.text
+    const title = `RepairLearning · ${labelOf(card.topic)}${isAsking ? t.yesOrNo : ''}`
+    const body = feedback ? `${feedback.isRight ? t.right : t.notQuite} ${feedback.text}` : card.text
 
     // The buttons share the first row with the title: a band shorter than the
     // card scrolls, and a bare digit only presses a button in view.
@@ -459,10 +476,10 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column">
         <Box flexDirection="row" columnGap={3}>
           <Text dimColor>{title}</Text>
-          {isAsking && <Button key="yes" label="Yes" hotkey="1" plain onPress={() => answer($, card, true)} />}
-          {isAsking && <Button key="no" label="No" hotkey="2" plain onPress={() => answer($, card, false)} />}
-          {!isAsking && <Button key="next" label={feedback ? 'Next' : 'Got it'} hotkey="1" plain onPress={() => moveOn($, card)} />}
-          <Button key="hide" label="Hide" hotkey="9" plain dimColor onPress={() => hide($)} />
+          {isAsking && <Button key="yes" label={t.yes} hotkey="1" plain onPress={() => answer($, card, true)} />}
+          {isAsking && <Button key="no" label={t.no} hotkey="2" plain onPress={() => answer($, card, false)} />}
+          {!isAsking && <Button key="next" label={feedback ? t.next : t.gotIt} hotkey="1" plain onPress={() => moveOn($, card)} />}
+          <Button key="hide" label={t.hide} hotkey="9" plain dimColor onPress={() => hide($)} />
         </Box>
         <Markdown text={body} />
       </Box>
