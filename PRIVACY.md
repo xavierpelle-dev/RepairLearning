@@ -18,7 +18,7 @@ it reads, what it keeps, and what it sends.
 
 ## Writing cards with a model
 
-RepairLearning ships 371 cards covering JavaScript, PHP and Git. For any other
+RepairLearning ships 628 cards covering JavaScript, Vue.js, PHP, Symfony and Git. For any other
 topic it asks Claude to write more. This is **on by default** and you can turn
 it off in `/config`, under **Write new cards with a model**.
 

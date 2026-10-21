@@ -25,6 +25,17 @@ describe('topicOf', () => {
     expect(topicOf('Read', { file_path: 'notes.md' })).toBe(null)
   })
 
+  test('tells Vue and Symfony apart from plain JavaScript and PHP', () => {
+    expect(topicOf('Edit', { file_path: 'src/components/Cart.vue' })).toBe('vue')
+    expect(topicOf('Edit', { file_path: 'src/Controller/BlogController.php' })).toBe('symfony')
+    expect(topicOf('Edit', { file_path: 'config/packages/security.yaml' })).toBe('symfony')
+    expect(topicOf('Read', { file_path: 'templates/blog/show.html.twig' })).toBe('symfony')
+    expect(topicOf('Edit', { file_path: 'src/Service/Mailer.php' })).toBe('php')
+    expect(topicOf('Bash', { command: 'php bin/console cache:clear' })).toBe('symfony')
+    expect(topicOf('Bash', { command: 'symfony server:start' })).toBe('symfony')
+    expect(topicOf('Bash', { command: 'php -l index.php' })).toBe('php')
+  })
+
   test('reads topics the packs do not cover', () => {
     expect(topicOf('Edit', { file_path: 'src/main.rs' })).toBe('rust')
     expect(topicOf('Read', { file_path: 'infra/main.tf' })).toBe('terraform')

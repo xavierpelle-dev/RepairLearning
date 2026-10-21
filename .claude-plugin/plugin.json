@@ -1,8 +1,8 @@
 {
   "name": "repairlearning",
   "displayName": "RepairLearning",
-  "description": "Learn while Claude works: short facts and yes/no questions about PHP, JavaScript and Git, in English or French, in the band above the prompt, paused whenever Claude needs you.",
-  "version": "1.2.0",
+  "description": "Learn while Claude works: short facts and yes/no questions about PHP, Symfony, JavaScript, Vue.js and Git, in English or French, in the band above the prompt, paused whenever Claude needs you.",
+  "version": "1.3.0",
   "author": {
     "name": "Xavier Pelle"
   },
@@ -17,7 +17,10 @@
     "flashcards",
     "spaced-repetition",
     "focus",
-    "french"
+    "french",
+    "php",
+    "symfony",
+    "vue"
   ],
   "types": "./types/index.d.ts",
   "userConfig": {
@@ -30,7 +33,7 @@
     "ai_cards": {
       "type": "boolean",
       "title": "Write new cards with a model",
-      "description": "Generate cards for whatever this session is about, such as Rust or Kubernetes, instead of only the shipped JavaScript, PHP and Git packs. Sends the topic name to Claude in the background and uses your plan.",
+      "description": "Generate cards for whatever this session is about, such as Rust or Kubernetes, instead of only the shipped JavaScript, Vue.js, PHP, Symfony and Git packs. Sends the topic name to Claude in the background and uses your plan.",
       "default": true
     },
     "daily_goal": {

@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "repairlearning",
-      "description": "Short facts and yes/no questions about PHP, JavaScript and Git, in English or French, above the prompt while Claude works.",
+      "description": "Short facts and yes/no questions about PHP, Symfony, JavaScript, Vue.js and Git, in English or French, above the prompt while Claude works.",
       "category": "learning",
       "source": "./"
     }

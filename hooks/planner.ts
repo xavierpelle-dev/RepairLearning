@@ -35,7 +35,7 @@ export const BASE_WEIGHT = 0.5
 export const DECAY = 0.8
 
 /** The topics the shipped packs cover. */
-export const PACK_TOPICS: readonly Topic[] = ['javascript', 'php', 'git']
+export const PACK_TOPICS: readonly Topic[] = ['javascript', 'php', 'git', 'vue', 'symfony']
 
 export function freshWeights(): Weights {
   return {}
@@ -74,6 +74,15 @@ export function leadingTopic(weights: Weights): Topic | null {
 }
 
 const EXTENSIONS: ReadonlyArray<[RegExp, Topic]> = [
+  // Frameworks first: a Symfony controller is still a .php file, so its
+  // folder has to be checked before the bare extension claims it.
+  [/\.vue$/i, 'vue'],
+  [/(^|\/)(nuxt|vue)\.config\.[cm]?[jt]s$/i, 'vue'],
+  [/(^|\/)src\/(Controller|Entity|Repository|Form|Security|EventSubscriber|EventListener|MessageHandler|Command)\/[^/]+\.php$/, 'symfony'],
+  [/(^|\/)config\/(packages\/[^/]+|services|routes)\.ya?ml$/i, 'symfony'],
+  [/(^|\/)config\/packages\/[^/]+\/[^/]+\.ya?ml$/i, 'symfony'],
+  [/\.twig$/i, 'symfony'],
+  [/(^|\/)symfony\.lock$/i, 'symfony'],
   // The shipped pack covers JavaScript and TypeScript together, so both map
   // to one topic rather than splitting the pack's cards away from .ts files.
   [/\.(m|c)?(j|t)sx?$/i, 'javascript'],
@@ -138,6 +147,10 @@ const PROGRAMS: Readonly<Record<string, Topic>> = {
   swift: 'swift',
   php: 'php',
   composer: 'php',
+  symfony: 'symfony',
+  nuxi: 'vue',
+  nuxt: 'vue',
+  'vue-tsc': 'vue',
   dotnet: 'csharp',
   psql: 'sql',
   mysql: 'sql',
@@ -168,6 +181,8 @@ export function topicOf(tool: string, input: Readonly<Record<string, unknown>>):
   const command = input['command']
   if ((tool === 'Bash' || tool === 'PowerShell') && typeof command === 'string') {
     for (const step of command.split(/&&|\|\||;|\|/)) {
+      // `php bin/console …` and `bin/console …` are Symfony, not plain PHP.
+      if (/(^|\s)(\.\/)?bin\/console(\s|$)/.test(step)) return 'symfony'
       const words = step.trim().split(/\s+/)
       // Skip leading `FOO=bar` assignments.
       const program = words.find(word => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(word))
@@ -193,6 +208,10 @@ export const PROJECT_FILES: ReadonlyArray<[string, Topic]> = [
   ['Gemfile', 'ruby'],
   ['pom.xml', 'java'],
   ['composer.json', 'php'],
+  ['symfony.lock', 'symfony'],
+  ['bin/console', 'symfony'],
+  ['src/App.vue', 'vue'],
+  ['nuxt.config.ts', 'vue'],
   ['Dockerfile', 'docker'],
 ]
 
@@ -213,6 +232,8 @@ const LABELS: Readonly<Record<string, string>> = {
   kotlin: 'Kotlin',
   swift: 'Swift',
   php: 'PHP',
+  vue: 'Vue.js',
+  symfony: 'Symfony',
   csharp: 'C#',
   sql: 'SQL',
   docker: 'Docker',

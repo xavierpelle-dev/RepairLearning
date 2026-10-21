@@ -3,8 +3,8 @@
 Learn something while Claude works — in English or in French.
 
 > Fork of [Holdtime](https://github.com/ItsRohith-A/holdtime) by Rohith A:
-> Python swapped for PHP, about 120 cards per topic instead of 36, and every
-> card, label and summary available in French.
+> Python swapped for PHP, Vue.js and Symfony added, about 120 cards per topic
+> instead of 36, and every card, label and summary available in French.
 
 When you send Claude Code a prompt, you often wait 30 seconds to a few minutes.
 RepairLearning fills that wait with one short card at a time — a quick fact or a
@@ -12,7 +12,7 @@ yes/no question — in the band just above your prompt. It picks cards from what
 Claude is doing right now, steps aside the moment Claude needs you, and
 remembers what you got wrong so it can ask again later.
 
-It ships with cards for JavaScript, PHP and Git, each in English and French, and writes its own for
+It ships with cards for JavaScript, Vue.js, PHP, Symfony and Git, each in English and French, and writes its own for
 whatever else you are working on, so a Rust or Kubernetes session gets Rust or
 Kubernetes cards.
 
@@ -114,7 +114,7 @@ Change these in `/config`, or when you install:
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Cartes en français (French cards) | Off | Cards, band, summaries and `/repairlearning` replies in French. Progress is kept when you switch |
-| Write new cards with a model | On | Cards for topics beyond the three packs. Uses your Claude plan; see [Privacy](#privacy) |
+| Write new cards with a model | On | Cards for topics beyond the five packs. Uses your Claude plan; see [Privacy](#privacy) |
 | Daily goal | 20 | Cards per day before RepairLearning goes quiet |
 | Cards per turn | 5 | Most cards in one Claude turn |
 
@@ -134,16 +134,18 @@ By topic (★ badge):
 
 ## What's inside
 
-371 cards ship with RepairLearning, in three topics, half quick facts and half
+628 cards ship with RepairLearning, in five topics, half quick facts and half
 yes/no questions, each written in English and in French:
 
 | Topic | Cards | Picked when Claude… |
 | --- | --- | --- |
 | JavaScript and TypeScript | 129 | edits `.js`/`.ts` files, runs `npm`, `node`, `tsc`… |
+| Vue.js (with Pinia and Vue Router) | 127 | edits `.vue` files or a `vite`/`nuxt` config, runs `nuxi`, `vue-tsc`… |
 | PHP | 122 | edits `.php` files, runs `php`, `composer`… |
+| Symfony (with Doctrine and Twig) | 130 | edits controllers, entities, `config/packages/*.yaml` or `.twig` files, runs `bin/console` or `symfony` |
 | Git | 120 | runs `git` or `gh` commands |
 
-With no signal yet, all three topics are mixed. Every shipped card was written
+With no signal yet, all five topics are mixed. Every shipped card was written
 for this project; none are copied from other sites.
 
 ### Cards for anything else
