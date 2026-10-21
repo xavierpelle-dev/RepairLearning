@@ -324,3 +324,26 @@ test('records and share speak French when French is on', { options: { french: tr
   expect((await $.command.run(command('top'))).text).toMatch(/^Niveau 4 · 90 XP \(encore 70 pour le niveau suivant\)/)
   expect((await $.command.run(command('share'))).text).toMatch(/niveau 4 \(90 XP\) · série de 3 jours/)
 })
+
+test('the stats draw bars for today, the level and each topic, and a sparkline of the last days', async ($, on) => {
+  engine(on, {
+    day: { date: '2026-10-02', count: 10 },
+    score: { xp: 50, streak: 2, bestStreak: 2, lastDay: '2026-10-02', bestDay: 10, days: { '2026-10-01': 5, '2026-10-02': 10 } },
+  })
+  const stats = (await $.command.run(command(''))).text ?? ''
+  expect(stats).toMatch(/^10\/20 cards today\.  ██████████░░░░░░░░░░$/m)
+  // Level 3 runs from 40 to 90 XP, so 50 XP is a fifth of the way.
+  expect(stats).toMatch(/^Level 3 · 50 XP  ████░░░░░░░░░░░░░░░░  40 XP to level 4$/m)
+  expect(stats).toMatch(/^Last 14 days  ············▄█  streak 2 days$/m)
+
+  // Answer one question right, then its topic gets a full bar.
+  await $.turn.start({ text: 'one', turnId: 't1' })
+  const ui = await $.ui.mount({ plugin: 'repairlearning', surface: 'terminal', ...BAND })
+  for (let i = 0; i < 5 && !(await ui.find({ key: 'yes' })); i += 1) await ui.press({ key: 'next' })
+  if (await ui.find({ key: 'yes' })) {
+    await ui.press({ key: 'yes' })
+    const after = (await $.command.run(command(''))).text ?? ''
+    expect(after).toMatch(/^ {2}\S.* (█{14} 100%|░{14}   0%) \(1\)$/m)
+  }
+  await ui.unmount()
+})

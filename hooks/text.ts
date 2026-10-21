@@ -44,6 +44,11 @@ export type Text = {
   goalReached: (goal: number) => string
   summary: (seen: number, right: number, asked: number, count: number, goal: number) => string
   levelUp: (level: number) => string
+  level: (level: number, xp: number) => string
+  toNext: (level: number, xp: number) => string
+  lastDays: (n: number) => string
+  streak: (n: number) => string
+  byTopicTitle: string
   records: (r: Records) => string
   share: (r: Records) => string
   shareHint: string
@@ -80,6 +85,11 @@ const EN: Text = {
     return `RepairLearning: ${cards} this turn${score} · ${count}/${goal} today`
   },
   levelUp: level => `RepairLearning: level ${level} reached!`,
+  level: (level, xp) => `Level ${level} · ${xp} XP`,
+  toNext: (level, xp) => `${xp} XP to level ${level}`,
+  lastDays: n => `Last ${n} days`,
+  streak: n => `streak ${days(n, 'day', 'days')}`,
+  byTopicTitle: 'By topic (★ badge):',
   records: r => [
     `Level ${r.level} · ${r.xp} XP (${r.toNext} to the next level).`,
     `Streak: ${days(r.streak, 'day', 'days')} (best ${days(r.bestStreak, 'day', 'days')}). Best day: ${r.bestDay} cards.`,
@@ -125,6 +135,11 @@ const FR: Text = {
     return `RepairLearning : ${cards} ce tour${score} · ${count}/${goal} aujourd’hui`
   },
   levelUp: level => `RepairLearning : niveau ${level} atteint !`,
+  level: (level, xp) => `Niveau ${level} · ${xp} XP`,
+  toNext: (level, xp) => `encore ${xp} XP pour le niveau ${level}`,
+  lastDays: n => `${n} derniers jours`,
+  streak: n => `série de ${days(n, 'jour', 'jours')}`,
+  byTopicTitle: 'Par sujet (★ badge) :',
   records: r => [
     `Niveau ${r.level} · ${r.xp} XP (encore ${r.toNext} pour le niveau suivant).`,
     `Série : ${days(r.streak, 'jour', 'jours')} (record ${days(r.bestStreak, 'jour', 'jours')}). Meilleur jour : ${r.bestDay} cartes.`,

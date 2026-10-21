@@ -16,7 +16,12 @@ export type Score = {
   lastDay: string | null
   /** The most cards seen in one day. */
   bestDay: number
+  /** Cards seen per day (YYYY-MM-DD), for the last `HISTORY_DAYS` days. */
+  days: Record<string, number>
 }
+
+/** How many days of history are kept for the activity chart. */
+export const HISTORY_DAYS = 30
 
 /** A right answer is worth more than a fact read or a wrong answer. */
 export const XP_RIGHT = 3
@@ -27,7 +32,7 @@ export const BADGE_ANSWERS = 20
 export const BADGE_PERCENT = 80
 
 export function freshScore(): Score {
-  return { xp: 0, streak: 0, bestStreak: 0, lastDay: null, bestDay: 0 }
+  return { xp: 0, streak: 0, bestStreak: 0, lastDay: null, bestDay: 0, days: {} }
 }
 
 /** Reads a stored score back, starting fresh from anything malformed. */
@@ -35,12 +40,19 @@ export function readScore(stored: unknown): Score {
   if (typeof stored !== 'object' || stored === null) return freshScore()
   const s = stored as Partial<Score>
   const count = (n: unknown): number => (typeof n === 'number' && Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0)
+  const days: Record<string, number> = {}
+  if (typeof s.days === 'object' && s.days !== null) {
+    for (const [day, n] of Object.entries(s.days)) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(day) && count(n) > 0) days[day] = count(n)
+    }
+  }
   return {
     xp: count(s.xp),
     streak: count(s.streak),
     bestStreak: count(s.bestStreak),
     lastDay: typeof s.lastDay === 'string' ? s.lastDay : null,
     bestDay: count(s.bestDay),
+    days,
   }
 }
 
@@ -68,7 +80,19 @@ export function addCard(before: Score, isRight: boolean | null, today: string, d
     bestStreak: Math.max(before.bestStreak, streak),
     lastDay: today,
     bestDay: Math.max(before.bestDay, dayCount),
+    days: recent({ ...before.days, [today]: dayCount }, today),
   }
+}
+
+/** Drops days older than the history window; YYYY-MM-DD sorts as text. */
+function recent(days: Record<string, number>, today: string): Record<string, number> {
+  const oldest = addDays(today, 1 - HISTORY_DAYS)
+  return Object.fromEntries(Object.entries(days).filter(([day]) => day >= oldest))
+}
+
+/** Cards seen on each of the last `n` days, oldest first, ending today. */
+export function lastDays(score: Score, today: string, n: number): number[] {
+  return Array.from({ length: n }, (_, i) => score.days[addDays(today, i + 1 - n)] ?? 0)
 }
 
 /** The streak as it stands today: still alive until a whole day is missed. */

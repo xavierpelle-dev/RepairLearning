@@ -65,7 +65,7 @@ In RepairLearning's own file in Claude Code's local plugin store, under
 | Today | The date and how many cards you saw that day |
 | Paused | Whether you turned cards off with `/repairlearning pause` |
 | Library | The cards a model wrote: their topic, text, answer and explanation |
-| Score | Your XP, current and best streak, the last day you saw a card, and your best day |
+| Score | Your XP, current and best streak, your best day, and how many cards you saw on each of the last 30 days |
 
 The library holds cards about public programming topics. It never holds
 anything taken from your own code or conversation.

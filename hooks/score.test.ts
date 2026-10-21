@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { addCard, badges, freshScore, levelOf, liveStreak, readScore, xpForLevel, XP_RIGHT, XP_SEEN } from './score'
+import { bar, sparkline } from './chart'
+import { addCard, badges, freshScore, lastDays, levelOf, liveStreak, readScore, xpForLevel, HISTORY_DAYS, XP_RIGHT, XP_SEEN } from './score'
 
 describe('levels', () => {
   test('start at 1 and get further apart', () => {
@@ -76,5 +77,37 @@ describe('readScore', () => {
     expect(readScore(undefined)).toEqual(freshScore())
     expect(readScore({ xp: -5, streak: 'x', lastDay: 3 })).toEqual(freshScore())
     expect(readScore({ xp: 12, streak: 2, bestStreak: 3, lastDay: '2026-10-01', bestDay: 9 }).xp).toBe(12)
+  })
+})
+
+describe('history', () => {
+  test('keeps each day\'s count and forgets days past the window', () => {
+    let s = addCard(freshScore(), null, '2026-09-01', 4)
+    s = addCard(s, null, '2026-10-01', 2)
+    s = addCard(s, null, '2026-10-02', 7)
+    expect(s.days).toEqual({ '2026-10-01': 2, '2026-10-02': 7 })
+    expect(Object.keys(s.days).length).toBeLessThan(HISTORY_DAYS + 1)
+  })
+
+  test('lastDays fills the days without cards with 0, oldest first', () => {
+    const s = { ...freshScore(), days: { '2026-09-30': 3, '2026-10-02': 5 } }
+    expect(lastDays(s, '2026-10-02', 4)).toEqual([0, 3, 0, 5])
+  })
+
+  test('readScore drops malformed days', () => {
+    expect(readScore({ days: { '2026-10-02': 3, nope: 4, '2026-10-01': -1 } }).days).toEqual({ '2026-10-02': 3 })
+  })
+})
+
+describe('charts', () => {
+  test('bar fills in proportion and clamps', () => {
+    expect(bar(0.5, 4)).toBe('██░░')
+    expect(bar(2, 4)).toBe('████')
+    expect(bar(-1, 4)).toBe('░░░░')
+  })
+
+  test('sparkline scales to the highest value and dots the zeros', () => {
+    expect(sparkline([0, 1, 4, 8])).toBe('·▁▄█')
+    expect(sparkline([0, 0])).toBe('··')
   })
 })

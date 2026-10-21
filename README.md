@@ -83,7 +83,7 @@ of starting a prompt. You can also click the buttons, or focus the band with
 
 | Command | What it does |
 | --- | --- |
-| `/repairlearning` | Today's count, your accuracy, and accuracy by topic |
+| `/repairlearning` | Charts: today's goal, your level, the last 14 days, and accuracy by topic |
 | `/repairlearning top` | Your level, XP, streak, best day and badges |
 | `/repairlearning share` | One line to paste into Discord or Slack |
 | `/repairlearning pause` | Turn cards off (stays off across sessions) |
@@ -117,6 +117,20 @@ Change these in `/config`, or when you install:
 | Write new cards with a model | On | Cards for topics beyond the three packs. Uses your Claude plan; see [Privacy](#privacy) |
 | Daily goal | 20 | Cards per day before RepairLearning goes quiet |
 | Cards per turn | 5 | Most cards in one Claude turn |
+
+### The stats view
+
+```
+7/20 cards today.  ███████░░░░░░░░░░░░░
+Level 4 · 112 XP  ████░░░░░░░░░░░░░░░░  48 XP to level 5
+Last 14 days  ··▃▅█▂·▁▄▆▇▃▅▆  streak 6 days
+
+Questions answered: 64, right: 51 (80%).
+By topic (★ badge):
+  ★ PHP        ████████████░░  86% (35)
+  Git          ██████████░░░░  72% (22)
+  JavaScript   ███████████░░░  71% (7)
+```
 
 ## What's inside
 

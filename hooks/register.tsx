@@ -18,7 +18,8 @@ import {
 } from './planner'
 import type { Ask, Progress, Weights } from './planner'
 import { avoidFor, merge, needsRefill, readLibrary, topicToFill } from './pool'
-import { addCard, badges, levelOf, liveStreak, readScore, xpForLevel } from './score'
+import { bar, pad, sparkline } from './chart'
+import { addCard, badges, lastDays, levelOf, liveStreak, readScore, xpForLevel } from './score'
 import { TEXT } from './text'
 import type { Records } from './text'
 
@@ -273,22 +274,37 @@ function forgetUnanswered(): void {
   session.unanswered = null
 }
 
+/** Days shown in the activity sparkline. */
+const SPARK_DAYS = 14
+
 async function statsText($: EngineInterface): Promise<string> {
   const day = await readDay($)
+  const score = readScore(await $.store.get('score'))
   const byTopic = accuracyByTopic(allCards(), session.progress)
   const rows = Object.entries(byTopic).sort((a, b) => b[1].asked - a[1].asked)
   const asked = rows.reduce((n, [, row]) => n + row.asked, 0)
   const right = rows.reduce((n, [, row]) => n + row.right, 0)
+  const level = levelOf(score.xp)
+  const floor = xpForLevel(level)
+  const ceiling = xpForLevel(level + 1)
+  const badged = new Set(badges(byTopic))
+  const t = text()
   // Only the topics actually answered, most answered first: the set is open
   // now, so listing every topic that exists would be a wall of dashes.
-  const t = text()
-  const topics = rows.length === 0
-    ? t.nothingYet
-    : rows.slice(0, 6).map(([t, row]) => `${labelOf(t)} ${pct(row.right, row.asked)} (${row.asked})`).join(' · ')
+  const shown = rows.slice(0, 6)
+  const width = Math.max(0, ...shown.map(([topic]) => labelOf(topic).length)) + 2
+  const topics = shown.length === 0
+    ? [t.byTopic(t.nothingYet)]
+    : [t.byTopicTitle, ...shown.map(([topic, row]) =>
+        `  ${pad(`${badged.has(topic) ? '★ ' : ''}${labelOf(topic)}`, width)} ${bar(row.right / row.asked, 14)} ${pct(row.right, row.asked).padStart(4)} (${row.asked})`)]
   return [
-    `${session.isPaused ? t.pausedPrefix : ''}${t.today(day.count, session.dailyGoal)}`,
+    `${session.isPaused ? t.pausedPrefix : ''}${t.today(day.count, session.dailyGoal)}  ${bar(day.count / session.dailyGoal)}`,
+    `${t.level(level, score.xp)}  ${bar((score.xp - floor) / (ceiling - floor))}  ${t.toNext(level + 1, ceiling - score.xp)}`,
+    `${t.lastDays(SPARK_DAYS)}  ${sparkline(lastDays(score, day.date, SPARK_DAYS))}  ${t.streak(liveStreak(score, day.date))}`,
+    '',
     t.answered(asked, right, pct(right, asked)),
-    t.byTopic(topics),
+    ...topics,
+    '',
     t.available(session.packs.length, session.isAiOn ? libraryInLang().length : null),
     session.isPaused ? t.resumeHint : t.pauseHint,
   ].join('\n')
